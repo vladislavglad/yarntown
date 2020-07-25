@@ -3,6 +3,8 @@ require"enemies/lib/patrol_route"
 local souls_enemy = {}
 
 local DEFAULT_ATTACK_RANGE = 40
+local DISTANCE_CHECK_INTERVAL = 100
+local CHANGE_MOVEMENT_TYPE_INTERVAL = 3000
 
 function souls_enemy:create(enemy, props)
   local game = enemy:get_game()
@@ -240,9 +242,28 @@ function souls_enemy:create(enemy, props)
     sprite:set_animation"walking"
   	local m = sol.movement.create("target")
   	m:set_speed(props.speed or 50)
-  	m:start(enemy, function() end)
+    m:start(enemy, function() end)
+    
+    function m:on_obstacle_reached()
+      if (enemy:get_breed() == "gascoigne") then
+        --print("Gas reached an obsticle!")
+        m = sol.movement.create("path_finding")
+        m:set_speed(props.speed or 50)
+        m:start(enemy, function() end)
+        DISTANCE_CHECK_INTERVAL = 1000
+        print("path_finding")
+      end
 
-  	sol.timer.start(enemy, 100, function()
+      sol.timer.start(enemy, CHANGE_MOVEMENT_TYPE_INTERVAL, 
+      function() 
+          m = sol.movement.create("target")
+          m:set_speed(props.speed or 50)
+          m:start(enemy, function() end)
+          print("target")
+      end)
+    end
+
+  	sol.timer.start(enemy, DISTANCE_CHECK_INTERVAL, function()
   		--see if close enough
     local dist = enemy:get_distance(hero)
   		if dist <= (props.attack_range or DEFAULT_ATTACK_RANGE) then
