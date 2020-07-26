@@ -5,13 +5,15 @@ local souls_enemy = {}
 local DEFAULT_ATTACK_RANGE = 40
 local DISTANCE_CHECK_INTERVAL = 100 --original value
 local CHANGE_MOVEMENT_TYPE_INTERVAL = 3000 --when to change from path_finding to target
-local STUCK_CHECK_INTERVAL = 500 --when to check if stuck.
+local STUCK_CHECK_INTERVAL = 1500 --when to check if stuck.
 
 function souls_enemy:create(enemy, props)
   local game = enemy:get_game()
   local map = enemy:get_map()
   local hero = map:get_hero()
   local sprite = enemy:get_sprite()
+  local isAttacking = false
+  local timer -- Timer for Gas
 
   enemy.entities = {}
 
@@ -228,21 +230,28 @@ function souls_enemy:create(enemy, props)
   	elseif previous_state == "agro" then
   		enemy:approach_hero()
   	elseif previous_state == "approach" then
-  		enemy:choose_attack()
+      enemy:choose_attack()
+      isAttacking = true
+      print("attacking!")
     elseif previous_state == "deagro" then
       enemy:return_to_idle_location()
   	elseif previous_state == "attack" then
-  		enemy:recover()
+      enemy:recover()
+      isAttacking = false
+      print("not attacking!")
   	elseif previous_state == "recover" then
   		enemy:approach_hero()
   	end
   end
 
   function enemy:handle_if_stuck() 
+
+    --print(string.format("isAttacking: %s\n", tostring(isAttacking)))
+
     local initial_x, initial_y, _ = enemy:get_position()
     --print("initial coordinates:" .. initial_x .. " " .. initial_y)
 
-    sol.timer.start(enemy, STUCK_CHECK_INTERVAL, function() 
+    local timer = sol.timer.start(enemy, STUCK_CHECK_INTERVAL, function() 
       local current_x, current_y, _ = enemy:get_position()
       --print("current coordinates: " .. current_x .. " " .. current_y)
       if (current_x == initial_x or current_y == initial_y) then
@@ -254,6 +263,7 @@ function souls_enemy:create(enemy, props)
       else  
       end
     end)
+    return timer
   end
 
   function enemy:approach_hero()
@@ -262,8 +272,8 @@ function souls_enemy:create(enemy, props)
   	m:set_speed(props.speed or 50)
     m:start(enemy, function() end)
 
-    if (enemy:get_breed() == "gascoigne") then
-      enemy:handle_if_stuck()
+    if (enemy:get_breed() == "gascoigne" and not isAttacking) then
+      timer = enemy:handle_if_stuck()
     end
     
     function m:on_obstacle_reached()
@@ -289,7 +299,13 @@ function souls_enemy:create(enemy, props)
   		--see if close enough
     local dist = enemy:get_distance(hero)
   		if dist <= (props.attack_range or DEFAULT_ATTACK_RANGE) then
-  			enemy:stop_movement()
+        enemy:stop_movement()
+        
+        if (enemy:get_breed() == "gascoigne") then
+          timer:set_remaining_time(2000)
+          print("timer is extended")
+          print(string.format("%s", tostring(timer:get_remaining_time())))
+        end
   			enemy:choose_next_state("approach")
       elseif dist >= (props.deagro_threshold or 250) then
         --Deagro
