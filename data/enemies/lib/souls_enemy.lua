@@ -231,16 +231,19 @@ function souls_enemy:create(enemy, props)
   		enemy:approach_hero()
   	elseif previous_state == "approach" then
       enemy:choose_attack()
-      isAttacking = true
-      print("attacking!")
+      --print("attacking!")
     elseif previous_state == "deagro" then
       enemy:return_to_idle_location()
   	elseif previous_state == "attack" then
       enemy:recover()
-      isAttacking = false
-      print("not attacking!")
+      --print("not attacking!")
   	elseif previous_state == "recover" then
-  		enemy:approach_hero()
+      enemy:approach_hero()
+
+      if (enemy:get_breed() == "gascoigne") then
+        timer:set_suspended(false)
+        print("timer is resumed")
+      end
   	end
   end
 
@@ -302,9 +305,8 @@ function souls_enemy:create(enemy, props)
         enemy:stop_movement()
         
         if (enemy:get_breed() == "gascoigne") then
-          timer:set_remaining_time(2000)
-          print("timer is extended")
-          print(string.format("%s", tostring(timer:get_remaining_time())))
+          timer:set_suspended(true)
+          print("timer is suspended")
         end
   			enemy:choose_next_state("approach")
       elseif dist >= (props.deagro_threshold or 250) then
