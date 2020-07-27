@@ -8,8 +8,18 @@ local hero = map:get_hero()
 local sprite
 local movement
 local DAMAGE = 150
+local SPEED = 100
+local RANGE = 100
+local DEAGRO = 900
 enemy.blood_echoes = 1800
 enemy.defense = 95
+
+local DISTANCE_CHECK_INTERVAL = 1000 --original value
+local CHANGE_MOVEMENT_TYPE_INTERVAL = 1500 --when to change from path_finding to target
+local STUCK_CHECK_INTERVAL = 500 --when to check if stuck.
+local isAttacking = false
+local timer -- Timer for Gas
+
 
 function enemy:on_created()
   sprite = enemy:create_sprite("enemies/" .. enemy:get_breed())
@@ -18,9 +28,9 @@ function enemy:on_created()
   	initial_movement_type = enemy:get_property("initial_movement_type") or "random",
   	damage = DAMAGE,
   	life = 2031,
-  	attack_range = 140,
-  	speed = 100,
-  deagro_threshold = 900,
+  	attack_range = RANGE,
+  	speed = SPEED,
+  deagro_threshold = DEAGRO,
   })
 end
 
@@ -93,7 +103,98 @@ print("Which attack set: ", which_attack_set)
 	else
 		enemy.recovery_time = 100
 		enemy:choose_next_state("recover")
-	end
+  end
+  
+
+  function enemy:handle_if_stuck() 
+
+    local initial_x, initial_y, _ = enemy:get_position()
+    --print("initial coordinates:" .. initial_x .. " " .. initial_y)
+
+    local timer = sol.timer.start(enemy, STUCK_CHECK_INTERVAL, function() 
+      local current_x, current_y, _ = enemy:get_position()
+      --print("current coordinates: " .. current_x .. " " .. current_y)
+      if (current_x == initial_x or current_y == initial_y) then
+        print("Stuck! Help!")
+        m = sol.movement.create("path_finding")
+        m:set_speed(SPEED)
+        m:start(enemy, function() end)
+        print("Finding path...\n")
+      else  
+      end
+    end)
+    return timer
+  end
+
+  function enemy:choose_next_state(previous_state)
+  	if enemy:get_life() < 1 then return
+    elseif not enemy.agro then
+  		enemy:start_default_state()
+  	elseif previous_state == "agro" then
+  		enemy:approach_hero()
+  	elseif previous_state == "approach" then
+      enemy:choose_attack()
+      isAttacking = true
+    elseif previous_state == "deagro" then
+      enemy:return_to_idle_location()
+  	elseif previous_state == "attack" then
+      enemy:recover()
+      isAttacking = false
+  	elseif previous_state == "recover" then
+      enemy:approach_hero()
+      timer:set_suspended(false) --local to Gas.
+  	end
+  end
+
+  function enemy:approach_hero()
+    sprite:set_animation"walking"
+  	local m = sol.movement.create("target")
+  	m:set_speed(SPEED)
+    m:start(enemy, function() end)
+
+    if (enemy:get_breed() == "gascoigne" and not isAttacking) then
+      timer = enemy:handle_if_stuck()
+    end
+    
+    function m:on_obstacle_reached()
+      if (enemy:get_breed() == "gascoigne") then
+        --print("Gas reached an obsticle!")
+        m = sol.movement.create("path_finding")
+        m:set_speed(SPEED)
+        m:start(enemy, function() end)
+        --print("movement type: path_finding")
+
+        sol.timer.start(enemy, CHANGE_MOVEMENT_TYPE_INTERVAL, 
+          function() 
+              m = sol.movement.create("target")
+              m:set_speed(SPEED)
+              m:start(enemy, function() end)
+              --print("movement type: target")
+          end)
+      end
+    end
+
+  	sol.timer.start(enemy, DISTANCE_CHECK_INTERVAL, function()
+  		--see if close enough
+    local dist = enemy:get_distance(hero)
+  		if dist <= (RANGE) then
+        enemy:stop_movement()
+        
+        if (enemy:get_breed() == "gascoigne") then
+          timer:set_suspended(true)
+          --print("timer is suspended")
+        end
+  			enemy:choose_next_state("approach")
+      elseif dist >= (DEAGRO) then
+        --Deagro
+        enemy.agro=false
+        enemy:stop_movement()
+        enemy:choose_next_state("deagro")
+  		else
+  			return true
+  		end
+  	end)
+  end
 
 end
 
