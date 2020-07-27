@@ -43828,6 +43828,7 @@ wall{
   y = 584,
   width = 24,
   height = 8,
+  stops_hero = true,
   stops_enemies = true,
 }
 
@@ -44782,32 +44783,6 @@ wall{
   stops_enemies = true,
 }
 
-wall{
-  layer = 0,
-  x = 192,
-  y = 520,
-  width = 24,
-  height = 8,
-  stops_hero = true,
-  stops_npcs = true,
-  stops_enemies = true,
-  stops_blocks = true,
-  stops_projectiles = true,
-}
-
-wall{
-  layer = 0,
-  x = 232,
-  y = 520,
-  width = 8,
-  height = 8,
-  stops_hero = true,
-  stops_npcs = true,
-  stops_enemies = true,
-  stops_blocks = true,
-  stops_projectiles = true,
-}
-
 enemy{
   layer = 0,
   x = 2816,
@@ -45308,6 +45283,62 @@ wall{
   x = 248,
   y = 664,
   width = 16,
+  height = 8,
+  stops_enemies = true,
+}
+
+wall{
+  layer = 0,
+  x = 184,
+  y = 528,
+  width = 8,
+  height = 64,
+  stops_enemies = true,
+}
+
+wall{
+  layer = 0,
+  x = 248,
+  y = 528,
+  width = 8,
+  height = 64,
+  stops_enemies = true,
+}
+
+wall{
+  layer = 0,
+  x = 184,
+  y = 528,
+  width = 72,
+  height = 8,
+  stops_enemies = true,
+}
+
+wall{
+  layer = 0,
+  x = 176,
+  y = 544,
+  width = 8,
+  height = 16,
+  stops_hero = true,
+  stops_enemies = true,
+}
+
+wall{
+  layer = 0,
+  x = 256,
+  y = 560,
+  width = 16,
+  height = 24,
+  stops_hero = true,
+  stops_enemies = true,
+}
+
+wall{
+  layer = 0,
+  x = 184,
+  y = 520,
+  width = 72,
   height = 8,
   stops_enemies = true,
 }
