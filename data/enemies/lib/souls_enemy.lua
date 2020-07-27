@@ -3,9 +3,6 @@ require"enemies/lib/patrol_route"
 local souls_enemy = {}
 
 local DEFAULT_ATTACK_RANGE = 40
-local DISTANCE_CHECK_INTERVAL = 100 --original value
-local CHANGE_MOVEMENT_TYPE_INTERVAL = 3000 --when to change from path_finding to target
-local STUCK_CHECK_INTERVAL = 500 --when to check if stuck.
 
 function souls_enemy:create(enemy, props)
   local game = enemy:get_game()
@@ -238,54 +235,14 @@ function souls_enemy:create(enemy, props)
   	end
   end
 
-  function enemy:handle_if_stuck() 
-    local initial_x, initial_y, _ = enemy:get_position()
-    --print("initial coordinates:" .. initial_x .. " " .. initial_y)
-
-    sol.timer.start(enemy, STUCK_CHECK_INTERVAL, function() 
-      local current_x, current_y, _ = enemy:get_position()
-      --print("current coordinates: " .. current_x .. " " .. current_y)
-      if (current_x == initial_x or current_y == initial_y) then
-        print("Stuck! Help!")
-        m = sol.movement.create("path_finding")
-        m:set_speed(props.speed or 50)
-        m:start(enemy, function() end)
-        print("Finding path...\n")
-      else  
-      end
-    end)
-  end
 
   function enemy:approach_hero()
     sprite:set_animation"walking"
   	local m = sol.movement.create("target")
   	m:set_speed(props.speed or 50)
-    m:start(enemy, function() end)
+  	m:start(enemy, function() end)
 
-    if (enemy:get_breed() == "gascoigne") then
-      enemy:handle_if_stuck()
-    end
-    
-    function m:on_obstacle_reached()
-      if (enemy:get_breed() == "gascoigne") then
-        --print("Gas reached an obsticle!")
-        m = sol.movement.create("path_finding")
-        m:set_speed(props.speed or 50)
-        m:start(enemy, function() end)
-        DISTANCE_CHECK_INTERVAL = 1000
-        --print("movement type: path_finding")
-
-        sol.timer.start(enemy, CHANGE_MOVEMENT_TYPE_INTERVAL, 
-          function() 
-              m = sol.movement.create("target")
-              m:set_speed(props.speed or 50)
-              m:start(enemy, function() end)
-              --print("movement type: target")
-          end)
-      end
-    end
-
-  	sol.timer.start(enemy, DISTANCE_CHECK_INTERVAL, function()
+  	sol.timer.start(enemy, 100, function()
   		--see if close enough
     local dist = enemy:get_distance(hero)
   		if dist <= (props.attack_range or DEFAULT_ATTACK_RANGE) then

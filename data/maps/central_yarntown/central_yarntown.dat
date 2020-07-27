@@ -45334,6 +45334,15 @@ wall{
   stops_enemies = true,
 }
 
+wall{
+  layer = 0,
+  x = 184,
+  y = 520,
+  width = 72,
+  height = 8,
+  stops_enemies = true,
+}
+
 tile{
   layer = 1,
   x = 1360,
